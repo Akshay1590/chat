@@ -1,20 +1,19 @@
-// Import necessary libraries
+import { doc, onSnapshot } from "firebase/firestore";
 import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { ChatContext } from "../context/ChatContext";
 import { db } from "../firebase";
-import { doc, onSnapshot } from "firebase/firestore";
 
 const Chats = () => {
-  const [chats, setChats] = useState({}); // Initialize chats as an object
+  const [chats, setChats] = useState([]);
 
   const { currentUser } = useContext(AuthContext);
   const { dispatch } = useContext(ChatContext);
 
   useEffect(() => {
     const getChats = () => {
-      const unsub = onSnapshot(doc(db, "chats", currentUser.uid), (doc) => {
-        setChats(doc.data() || {}); // Set chats to an empty object if doc.data() is null
+      const unsub = onSnapshot(doc(db, "userChats", currentUser.uid), (doc) => {
+        setChats(doc.data());
       });
 
       return () => {
@@ -29,27 +28,18 @@ const Chats = () => {
     dispatch({ type: "CHANGE_USER", payload: u });
   };
 
-  // Convert chats object to an array and sort it
-  const sortedChats = Object.entries(chats)
-    .sort((a, b) => b[1].date - a[1].date)
-    .map(([chatId, chatData]) => ({
-      id: chatId,
-      userInfo: chatData.userInfo,
-      lastMessage: chatData.lastMessage,
-    }));
-
   return (
     <div className="chats">
-      {sortedChats.map((chat) => (
+      {Object.entries(chats)?.sort((a,b)=>b[1].date - a[1].date).map((chat) => (
         <div
           className="userChat"
-          key={chat.id}
-          onClick={() => handleSelect(chat.userInfo)}
+          key={chat[0]}
+          onClick={() => handleSelect(chat[1].userInfo)}
         >
-          <img src={chat.userInfo.photoURL} alt="" />
+          <img src={chat[1].userInfo.photoURL} alt="" />
           <div className="userChatInfo">
-            <span>{chat.userInfo.displayName}</span>
-            <p>{chat.lastMessage?.text}</p>
+            <span>{chat[1].userInfo.displayName}</span>
+            <p>{chat[1].lastMessage?.text}</p>
           </div>
         </div>
       ))}
